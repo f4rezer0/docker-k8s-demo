@@ -139,7 +139,7 @@ EOF
 
 Allow permissions on the created files: 
 ```bash
-ls -a | xargs -I {} chmod 777 {}
+ls -a | xargs -I {} chmod 1777 {}
 ```
 
 Build the docker image:
@@ -250,7 +250,7 @@ $ export KUBECONFIG=/Users/alessandroargentieri/.kube/config_serverinfo-example
 ```
 You can create a `Deployment` kubernetes object with 10 replicas of the `alessandroargentieri/serverinfo` image:
 ```bash
-$ kubectl apply -f - << EOF
+$ cat > serverinfo-deployment.yaml << EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -284,6 +284,7 @@ spec:
     targetPort: 8080
   type: LoadBalancer
 EOF
+$ kubectl apply -f serverinfo-deployment.yaml
 ```
 
 If you want to list all pods in the `default` namespace according to the node in which they're deployed you can:
