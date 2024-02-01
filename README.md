@@ -172,6 +172,7 @@ If you want to run the container from that image (either if you don't pull first
 ```bash
 $ docker run -it -d -p 8082:8081 -e PORT=8081 --name=serverinfo alessandroargentieri/serverinfo:latest 
 ```
+The cluster will be exposed on port 8082 to the local machine and on the port 8081 internally in the docker network in which the container has been started (if not specified in the `run` command is the default `bridge` network).
 
 You can check the logs from the `serverinfo` running container with:
 ```bash
@@ -202,6 +203,15 @@ You can verify the IP assigned from docker to the given cluster with:
 $ docker inspect --format="{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" serverinfo
 172.17.0.4
 ```
+This IP is valid and reachable only in the `bridge` network (the default network Docker assigns to a cluster when no other has been specified).
+
+Let's try reaching this container from inside another container in the same `bridge` network. Remember that with the `-p 8082:8081` flag used in the `run` command the container has been exposed on port 8082 on the host machine and on 8081 in the docker `bridge` network:
+```bash
+$ docker run -it --rm --name mybash bash:latest
+bash-5.2# apk add curl
+bash-5.2# curl http://172.17.0.4:8081/info 
+```
+
 
 You can try to access the container (you need to comment the `adduser` into the `Dockerfile` and rebuild the image to allow root 
 access to the container):
