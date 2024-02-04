@@ -1,6 +1,23 @@
-## instructions
+# Docker and Kubernetes crash course
 
-Init the golang project:
+[![Made with Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+[![Made with Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://docker.io)
+[![Made with Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+
+In this tutorial we will:
+- develop a very simple HTTP server in [Go](https://go.dev) providing some basic information on the host server on which the process is running
+- create a Dockerfile to containerize it
+- create an image for this service
+- push the image on a docker registry (DockerHub) 
+- run the container locally
+- create a managed Kubernetes cluster (of type K3s) on [Civo](https://civo.com)
+- create a `Deployment` of 10 replicas of the above service, exposed through an external `LoadBalancer` created by the Cloud Provider
+- create a local Kubernetes cluster with [k3d](https://k3d.io)
+- deploy the service and inspect it through Docker
+
+## Create the golang service
+
+Init a new golang project:
 ```bash
 $ go mod init serverinfo
 ```
@@ -89,15 +106,19 @@ func main() {
 }
 EOF
 ```
+Check if it's correctly formatted, else run:
+```bash
+$ go fmt
+```
 
-Create the `.gitignore`:
+Create the `.gitignore` to avoid pushing the executable (`serverinfo`) we're about to create in the next step:
 ```bash
 $ cat > .gitignore << 'EOF'
 serverinfo
 EOF
 ```
 
-Build and test locally:
+Build the executable and launch locally:
 ```bash
 $ go build -o serverinfo .
 $ ./serverinfo
@@ -106,8 +127,9 @@ Then you can open a new terminal and call:
 ```bash
 $ curl http://localhost:8080/info | jq
 ```
+## Introducing Docker
 
-Create the `Dockerfile`:
+Let's create the `Dockerfile`, the file instructing the Docker builder on how to create the image of the service:
 ```bash
 $ cat > Dockerfile << 'EOF'
 # build stage
@@ -136,18 +158,20 @@ USER appuser
 CMD ["./serverinfo"]
 EOF
 ```
+This file allows the creation of the new image in two "stages", one starting from the `golang` base image (in order to compile the source code), and the final one starting from 
+the `busybox` base image, a very tiny one to which we copy the newly created executable for the `serverinfo` service.
 
 Allow permissions on the created files: 
 ```bash
 ls -a | xargs -I {} chmod 1777 {}
 ```
 
-Build the docker image:
+Build the docker image, by prefixing it with the DockerHub registered account (in this case is `alessandroargentieri`):
 ```bash
 $ docker build -t alessandroargentieri/serverinfo:v0.0.1 -t alessandroargentieri/serverinfo:latest .
 ```
 
-Verify the image is present:
+Verify the image is present locally
 ```bash
 $ docker images | grep serverinfo
 ```
@@ -246,7 +270,8 @@ $ docker rmi alessandroargentieri/serverinfo:v0.0.1
 # or alternatively:
 #   docker image rm alessandroargentieri/serverinfo:v0.0.1 
 ```
-## Bonus: use the container in a kubernetes cluster
+
+## Create a Kubernetes cluster and deploy the `serverinfo`
 
 You can reuse images wherever you want. In this example we're going to launch our `serverinfo` application in a managed Kubernetes cluster with Civo:
 If you have civo CLI configured you can create a cluster with:
@@ -301,7 +326,8 @@ If you want to list all pods in the `default` namespace according to the node in
 ```bash
 $ kubectl get nodes --no-headers | cut -d ' ' -f 1 | xargs -I {} bash -c "echo;echo node {};  kubectl get pods -o wide --field-selector spec.nodeName={}"
 ```
-## Bonus: use the container in a local distro of a kubernetes cluster
+
+## Bonus: use the container in a local distro (k3d) of a kubernetes cluster
 
 We want to use `k3d` as local kubernetes distribution.
 
