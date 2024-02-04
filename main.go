@@ -1,3 +1,7 @@
+/*
+   HTTP server responding to /info endpoint on default port 8080
+   To use a different port, pass the env variable PORT to the process
+*/
 package main
 
 import (
