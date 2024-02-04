@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serverinfo
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: serverinfo
+  template:
+    metadata:
+      labels:
+        app: serverinfo
+    spec:
+      containers:
+        - name: serverinfo
+          image: alessandroargentieri/serverinfo:v0.0.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: serverinfo-lb
+spec:
+  selector:
+    app: serverinfo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
